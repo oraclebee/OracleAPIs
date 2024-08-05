@@ -16,7 +16,7 @@ import sleet from "../Img/sleet.png";
 import snowflake from "../Img/snowflake.png";
 import "../App.css";
 
-//TODO: Define a mapping from weather conditions to image paths
+// Define a mapping from weather conditions to image paths
 const weatherImages = {
   Clear: clearSky,
   "Partly cloudy": p_cloudy,
@@ -60,7 +60,6 @@ const weatherImages = {
   "Patchy heavy snow": snow,
   "Heavy snow": snow,
   "Ice pellets": snowflake,
-  //TODO: "Light rain shower":drizzle,
   "Moderate or heavy rain shower": rain,
   "Torrential rain shower": rain,
   "Light sleet showers": snowflake,
@@ -73,43 +72,25 @@ const weatherImages = {
   "Moderate or heavy rain with thunder": storm,
   "Patchy light snow with thunder": storm,
   "Moderate or heavy snow with thunder": storm,
-
-  // Add more conditions and corresponding images as needed
 };
 
 export default function WeatherApi() {
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [location, setLocation] = useState("");
 
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        //TODO: Fetch data from the first API
         const response1 = await fetch("https://ipapi.co/json/");
         if (!response1.ok) {
           throw new Error("Error fetching initial data");
         }
         const data1 = await response1.json();
 
-        //TODO: Extract the city value
         const city = data1.city;
-        console.log(`City: ${city}`);
-
-        //TODO: Construct the URL for the second API
-        const apiUrl = `https://api.weatherapi.com/v1/current.json?key=db3b549960994f87ac5143034243107&q=${city}`;
-
-        //TODO: Fetch data from the second API using the constructed URL
-        const response2 = await fetch(apiUrl);
-        if (!response2.ok) {
-          throw new Error("Error fetching weather details");
-        }
-        const data2 = await response2.json();
-
-        //TODO: Process the data from the second API
-        console.log("Weather Details:", data2);
-        setWeatherData(data2);
-        setLoading(false);
+        fetchWeatherDetails(city);
       } catch (error) {
         console.error("Error:", error);
         setError(error.message);
@@ -119,6 +100,31 @@ export default function WeatherApi() {
 
     fetchWeatherData();
   }, []);
+
+  const fetchWeatherDetails = async (city) => {
+    try {
+      const apiUrl = `https://api.weatherapi.com/v1/current.json?key=db3b549960994f87ac5143034243107&q=${city}`;
+      const response2 = await fetch(apiUrl);
+      if (!response2.ok) {
+        throw new Error("Error fetching weather details");
+      }
+      const data2 = await response2.json();
+      setWeatherData(data2);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error:", error);
+      setError(error.message);
+      setLoading(false);
+    }
+  };
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+    if (location) {
+      setLoading(true);
+      fetchWeatherDetails(location);
+    }
+  };
 
   if (loading) {
     return (
@@ -132,7 +138,6 @@ export default function WeatherApi() {
     return <div>Error: {error}</div>;
   }
 
-  //TODO: Determine the image source based on the weather condition
   const conditionText = weatherData?.current.condition.text;
   const imageSrc = weatherImages[conditionText] || sun;
 
@@ -146,12 +151,28 @@ export default function WeatherApi() {
       />
       {weatherData && (
         <div>
-          <h2>{weatherData.location.name}</h2>
+          <h2>{weatherData.location.name}</h2> <h2>{weatherData.location.country}</h2>
+          <h5>{weatherData.location.localtime}</h5>
           <p>{conditionText}</p>
           <p>Temperature: {weatherData.current.temp_c}°C</p>
           <p>Humidity: {weatherData.current.humidity}%</p>
           <p>Wind: {weatherData.current.wind_kph} kph</p>
           <p>Feels like: {weatherData.current.feelslike_c}°C</p>
+          <form onSubmit={handleFormSubmit}>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter City To Check Weather"
+            />
+            <br />
+            <button
+              type="submit"
+              style={{ backgroundColor: "cyan", color: "white", border: "0", padding: "4px" }}
+            >
+              Get Weather
+            </button>
+          </form>
         </div>
       )}
     </div>
